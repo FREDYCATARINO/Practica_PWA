@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+    <title>Page Title</title>
+    <link rel="stylesheet" href="main.css" />
+  </head>
+  <body class="container py-5">
+    <header>
+      <h1>Registro de Incidencias en Campo</h1>
+      <span id="badge-red" class="badge online"
+        >En Línea</span
+      >
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Nueva Incidencia</h2>
+        <form id="form-incidencia">
+          <input
+            type="text"
+            id="titulo"
+            placeholder="Título del reporte (ej. Falla en válvula 4)"
+            required
+            name="titulo"
+          />
+          <textarea
+            id="descripcion"
+            placeholder="Detalle técnico..."
+            required
+            name="descripcion"
+          ></textarea>
+          <button type="submit" id="btn-enviar">Enviar Reporte</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="header-lista">
+          <h2>Bandeja de Salida (IndexedDB)</h2>
+          <button id="btn-purgar" type="button">
+            Purgar Sincronizados
+          </button>
+        </div>
+        <ul id="lista-outbox"></ul>
+      </section>
+    </main>
+  </body>
+  <script src="db-helper.js"></script>
+  <script src="app.js"></script>
+</html>

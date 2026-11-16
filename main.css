@@ -1,0 +1,295 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap");
+
+/* ---------- Tokens ---------- */
+:root {
+  --papel: #e8ebe8;
+  --superficie: #f7f8f6;
+  --tinta: #1c2428;
+  --acero: #56646b;
+  --linea: #c3cac7;
+  --senal: #f2c230;
+  /* amarillo de seguridad */
+  --en-linea: #1d7d52;
+  --sin-red: #b83a26;
+  --foco: #0b5cad;
+
+  --fuente-titulo: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+  --fuente-cuerpo: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --papel: #161c1f;
+    --superficie: #1f282c;
+    --tinta: #e9eeea;
+    --acero: #9aa8ae;
+    --linea: #354145;
+    --en-linea: #4cc38a;
+    --sin-red: #ff7a63;
+    --foco: #6db3ff;
+  }
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--fuente-cuerpo);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.container {
+  width: min(100% - 2rem, 44rem);
+  margin-inline: auto;
+}
+
+.py-5 {
+  padding-block: 2.5rem;
+}
+
+h1,
+h2 {
+  font-family: var(--fuente-titulo);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0;
+}
+
+/* ---------- Encabezado (el único acento fuerte) ---------- */
+header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-top: 1.25rem;
+  border-top: 14px solid transparent;
+  border-image: repeating-linear-gradient(-45deg,
+      var(--senal) 0 14px,
+      var(--tinta) 14px 28px) 1;
+}
+
+h1 {
+  font-size: clamp(2rem, 6vw, 2.75rem);
+  letter-spacing: 0.01em;
+}
+
+/* ---------- Indicador de red ---------- */
+.badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge.online {
+  color: var(--en-linea);
+}
+
+.badge.offline {
+  color: var(--sin-red);
+}
+
+/* ---------- Secciones ---------- */
+main {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.card {
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: 6px;
+  padding: 1.5rem;
+}
+
+.card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* ---------- Formulario ---------- */
+form {
+  display: grid;
+  gap: 0.875rem;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  background: var(--papel);
+  color: var(--tinta);
+  border: 1.5px solid var(--linea);
+  border-radius: 4px;
+  font: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--acero);
+}
+
+textarea {
+  min-height: 7.5rem;
+  resize: vertical;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  border-color: var(--foco);
+}
+
+/* ---------- Botones ---------- */
+button {
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0.7rem 1.25rem;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+#btn-enviar {
+  justify-self: start;
+  background: var(--senal);
+  color: #1c2428;
+  border: 2px solid #1c2428;
+}
+
+#btn-enviar:hover:not(:disabled) {
+  background: #ffd24d;
+}
+
+#btn-purgar {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.875rem;
+  background: transparent;
+  color: var(--tinta);
+  border: 1.5px solid var(--acero);
+}
+
+#btn-purgar:hover:not(:disabled) {
+  background: var(--papel);
+}
+
+/* ---------- Bandeja de salida ---------- */
+.header-lista {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.header-lista h2 {
+  margin: 0;
+}
+
+#lista-outbox {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+#lista-outbox:empty::before {
+  content: "No hay reportes en la bandeja.";
+  color: var(--acero);
+}
+
+#lista-outbox li {
+  padding: 0.75rem 1rem;
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  border-left: 5px solid var(--senal);
+  /* pendiente por defecto */
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+#lista-outbox li strong {
+  font-weight: 600;
+}
+
+#lista-outbox li small,
+#lista-outbox li span {
+  color: var(--acero);
+}
+
+/* Estados (ajusta la clase a la que use tu app.js) */
+#lista-outbox li.pendiente,
+#lista-outbox li[data-estado="pendiente"] {
+  border-left-color: var(--senal);
+}
+
+#lista-outbox li.sincronizado,
+#lista-outbox li[data-estado="sincronizado"] {
+  border-left-color: var(--en-linea);
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 30rem) {
+  .py-5 {
+    padding-block: 1.5rem;
+  }
+
+  .card {
+    padding: 1.1rem;
+  }
+
+  .header-lista {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #btn-enviar {
+    justify-self: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
