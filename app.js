@@ -5,23 +5,27 @@ const nuevaOrden = {
   fecha: Date.now(),
 };
 
-guardarRegistro(nuevaOrden)
-  .then((idAsignado) => {
-    console.log(
-      "Registro encolado localmente con ID:",
-      idAsignado,
-    );
-    return obtenerTodosLosRegistros();
-  })
-  .then((listaCompleta) => {
-    console.table(listaCompleta);
-  })
-  .catch((error) => {
-    console.error(
-      "Falla en operación de IndexedDB:",
-      error,
-    );
-  });
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener(
+    "message",
+    (event) => {
+      if (
+        event.data &&
+        event.data.tipo === "OUTBOX_SINCRONIZADO"
+      ) {
+        console.log(
+          "[UI] Confirmación recibida del Service Worker. Actualizando bandeja...",
+        );
+        renderizarColaOutbox().catch((error) => {
+          console.error(
+            "Falla al renderizar la cola de outbox:",
+            error,
+          );
+        });
+      }
+    },
+  );
+}
 
 function procesarEnvioReporte(datosFormulario) {
   const endpoint =
@@ -39,6 +43,9 @@ function procesarEnvioReporte(datosFormulario) {
     })
     .then(() => {
       // Envío exitoso en vivo: registrar en bitácora local como sincronizado
+      console.log(
+        "[Outbox] Envío en vivo exitoso. Guardando registro como sincronizado...",
+      );
       return guardarRegistro({
         ...datosFormulario,
         estado: "sincronizado",
@@ -47,74 +54,87 @@ function procesarEnvioReporte(datosFormulario) {
     })
     .catch(() => {
       console.warn(
-        "[Outbox] Sin conexión. Encolando transacción localmente...",
+        "[Outbox] Sin conexión. Encolando en IndexedDB...",
       );
-      // Falla de red: guardar en IndexedDB como pendiente para reenvío posterior
+
       return guardarRegistro({
         ...datosFormulario,
         estado: "pendiente",
         fechaCreacion: Date.now(),
+      }).then(() => {
+        // Detección de soporte para Background Sync API
+        if (
+          "serviceWorker" in navigator &&
+          "SyncManager" in window
+        ) {
+          return navigator.serviceWorker.ready.then(
+            (registro) => {
+              console.log(
+                "[Outbox] Registrando etiqueta sync-reportes en el SW...",
+              );
+              return registro.sync.register(
+                "sync-reportes",
+              );
+            },
+          );
+        }
       });
     })
     .then(() => {
-      // Actualizar la lista visual en ambos escenarios
+      console.log(
+        "[Outbox] Registro guardado en IndexedDB y listo para sincronizar.",
+      );
       return renderizarColaOutbox();
     });
 }
-
-function sincronizarPendientes() {
+function sincronizarPendientesFallback() {
   console.log(
     "[Outbox] Conexión detectada. Buscando registros pendientes...",
   );
 
-  return obtenerTodosLosRegistros()
-    .then((registros) => {
-      const pendientes = registros.filter(
-        (item) => item.estado === "pendiente",
-      );
+  return obtenerTodosLosRegistros().then((registros) => {
+    const pendientes = registros.filter(
+      (item) => item.estado === "pendiente",
+    );
 
-      if (pendientes.length === 0) {
-        console.log(
-          "[Outbox] No hay transacciones pendientes por sincronizar.",
+    if (pendientes.length === 0) {
+      console.log(
+        "[Outbox] No hay transacciones pendientes por sincronizar.",
+      );
+      return;
+    }
+
+    // Convertir cada registro pendiente en una promesa de envío + actualización
+    const promesasDeEnvio = pendientes.map((item) => {
+      return fetch(
+        "https://jsonplaceholder.typicode.com/posts",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: item.titulo,
+            body: item.descripcion,
+          }),
+        },
+      ).then((res) => {
+        if (!res.ok)
+          throw new Error("Falla al reintentar envío");
+        // Actualizar estado en IndexedDB de 'pendiente' a 'sincronizado'
+        return actualizarEstadoRegistro(
+          item.id,
+          "sincronizado",
         );
-        return;
-      }
-
-      // Convertir cada registro pendiente en una promesa de envío + actualización
-      const promesasDeEnvio = pendientes.map((item) => {
-        return fetch(
-          "https://jsonplaceholder.typicode.com/posts",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title: item.titulo,
-              body: item.descripcion,
-            }),
-          },
-        ).then((res) => {
-          if (!res.ok)
-            throw new Error("Falla al reintentar envío");
-          // Actualizar estado en IndexedDB de 'pendiente' a 'sincronizado'
-          return actualizarEstadoRegistro(
-            item.id,
-            "sincronizado",
-          );
-        });
       });
-
-      // Esperar a que todos los reenvíos concluyan
-      return Promise.all(promesasDeEnvio);
-    })
-    .then(() => {
-      return renderizarColaOutbox();
-    })
-    .catch((error) => {
-      console.error(
-        "[Outbox] Error durante la sincronización masiva:",
-        error,
-      );
     });
+
+    // Esperar a que todos los reenvíos concluyan
+    return Promise.all(promesasDeEnvio).then(() => {
+      console.log(
+        "[Outbox] Todos los registros pendientes han sido sincronizados.",
+      );
+      return renderizarColaOutbox();
+    });
+  });
 }
 
 function renderizarColaOutbox() {
@@ -129,32 +149,15 @@ function renderizarColaOutbox() {
     }
     registros.forEach((item) => {
       const li = document.createElement("li");
-      li.textContent = `${item.cliente} - $${
-        item.monto
-      } - ${new Date(item.fecha).toLocaleString()}`;
+      li.textContent = `${item.title} - ${item.body} - Estado: ${item.estado}`;
       ul.appendChild(li);
     });
   });
 }
 
-renderizarColaOutbox().catch((error) => {
-  console.error(
-    "Falla al renderizar la cola de outbox:",
-    error,
-  );
-});
-
 function purgarColaOutbox() {
   console.log(
     "[Outbox] Purga de registros sincronizados iniciada...",
-  );
-  const list = obtenerTodosLosRegistros().then(
-    (registros) => {
-      console.log(
-        "Registros actuales antes de purgar:",
-        registros,
-      );
-    },
   );
   const lista = obtenerTodosLosRegistros().then(
     (registros) => {
@@ -185,8 +188,7 @@ function onSubmit(e) {
 }
 
 function actualizarIndicadorRed(isOffline = true) {
-  const indicador =
-    document.getElementById("indicador-red");
+  const indicador = document.getElementById("badge-red");
   if (isOffline) {
     indicador.textContent = "Sin conexión";
     indicador.classList.add("offline");
@@ -199,7 +201,14 @@ function actualizarIndicadorRed(isOffline = true) {
 // Escuchar el regreso de la conectividad
 window.addEventListener("online", () => {
   actualizarIndicadorRed(false);
-  sincronizarPendientes();
+
+  // Degradación elegante: Solo sincronizar desde UI si el navegador NO soporta Background Sync (ej. Safari/iOS)
+  if (!("SyncManager" in window)) {
+    console.log(
+      "[Outbox] Navegador sin SyncManager. Ejecutando fallback por evento online...",
+    );
+    sincronizarPendientesFallback();
+  }
 });
 
 window.addEventListener("offline", actualizarIndicadorRed);
