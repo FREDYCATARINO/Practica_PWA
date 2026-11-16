@@ -202,7 +202,7 @@ window.addEventListener("online", () => {
   sincronizarPendientes();
 });
 
-//window.addEventListener("offline", actualizarIndicadorRed);
+window.addEventListener("offline", actualizarIndicadorRed);
 
 window.addEventListener("load", () => {
   document
