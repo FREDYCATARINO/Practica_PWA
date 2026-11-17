@@ -1,4 +1,4 @@
-// Ejemplo de guardado y lectura encadenada con .then() y .catch()
+// Ejemplo de guardado y lectura encadenada con .then() y .catch()}
 const nuevaOrden = {
   cliente: "Empresa Logística SA",
   monto: 14500,
@@ -193,7 +193,7 @@ function actualizarIndicadorRed(isOffline = true) {
     indicador.textContent = "Sin conexión";
     indicador.classList.add("offline");
   } else {
-    indicador.textContent = "Conectado";
+    indicador.textContent = "En línea";
     indicador.classList.remove("offline");
   }
 }
@@ -214,6 +214,13 @@ window.addEventListener("online", () => {
 window.addEventListener("offline", actualizarIndicadorRed);
 
 window.addEventListener("load", () => {
+  renderizarColaOutbox().catch((error) => {
+    console.error(
+      "Falla al renderizar la cola de outbox:",
+      error,
+    );
+  });
+  actualizarIndicadorRed(!navigator.onLine);
   document
     .getElementById("btn-purgar")
     .addEventListener("click", purgarColaOutbox);

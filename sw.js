@@ -48,8 +48,8 @@ function sincronizarPendientesSW() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            title: item.titulo,
-            body: item.descripcion,
+            title: item.title,
+            body: item.body,
           }),
         },
       ).then((respuesta) => {
@@ -89,3 +89,12 @@ self.addEventListener("sync", (event) => {
     );
   }
 });
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("./sw.js")
+    .then(() => console.log("[SW] Registrado"))
+    .catch((err) =>
+      console.error("[SW] Falló el registro:", err),
+    );
+}
